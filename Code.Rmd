@@ -1,0 +1,173 @@
+---
+title: "Beijing Multi-Site Air-Quality Analysis"
+author: "Kota, Yasomitra Sampat"
+date: "2023-04-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(astsa)
+library(tseries)
+library(dplyr) 
+```
+
+# Data Loading
+```{r data_loading}
+regions= c("Aotizhongxin", "Changping", "Dingling", "Dongsi", 
+           "Guanyuan", "Gucheng", "Huairou", "Nongzhanguan", 
+           "Shunyi", "Tiantan", "Wanliu", "Wanshouxigong")
+
+for (i in regions){
+  
+  assign(paste0("data_", i), 
+         read.csv(paste0("./PRSA2017_Data_20130301-20170228/PRSA_Data_20130301-20170228/PRSA_Data_", 
+                         i ,"_20130301-20170228.csv")))
+  
+}
+```
+
+```{r merge_data}
+
+data_all <- data_Aotizhongxin[0,]
+
+for (i in regions){
+  
+  data_all= union(data_all, get(paste0("data_", i)))
+  
+}
+
+dim(data_all)
+
+unique(data_all$station)
+
+```
+# Data Exploration
+```{r EDA1}
+
+par(mfrow=c(2,2))
+tsplot(data_Aotizhongxin$TEMP)
+tsplot(data_Changping$TEMP)
+tsplot(data_Dingling$TEMP)
+tsplot(data_Dongsi$TEMP)
+
+for (i in c(6:15, 17)){
+  
+  print(paste0("correlation of columns", colnames(data_Aotizhongxin)[i]))
+  
+  print(ccf(x = data_Aotizhongxin[, i],
+      y= data_Changping[, i],
+      na.action = na.pass,
+      plot = FALSE)[0])
+  
+  print(ccf(x = data_Changping[, i],
+      y= data_Dingling[, i],
+      na.action = na.pass,
+      plot = FALSE)[0])
+  
+  print(ccf(x = data_Dingling[, i],
+      y= data_Dongsi[, i],
+      na.action = na.pass,
+      plot = FALSE)[0])
+
+}
+
+```
+
+```{r}
+
+avg_data= 
+  data_Aotizhongxin %>%
+    group_by(across(all_of(c("year", "month", "day")))) %>%
+        summarise_at(colnames(data_Aotizhongxin)[c(6:15, 17)], mean, na.rm = TRUE)
+
+avg_data$seven_day_index <- c(0, rep(1:(nrow(avg_data)-1)%/%7))
+
+sum(is.na(avg_data))
+
+temp= avg_data %>% filter(year >= 2015)
+
+sum(is.na(temp))
+
+```
+
+```{r}
+
+#tsplot(data_Aotizhongxin$TEMP)
+#tsplot(data_Changping$TEMP)
+#tsplot(data_Dingling$TEMP)
+#tsplot(data_Dongsi$TEMP)
+
+avg_data= 
+  data_Dongsi %>%
+    group_by(across(all_of(c("year", "month", "day")))) %>%
+        summarise_at(colnames(data_Aotizhongxin)[c(6:15, 17)], mean, na.rm = TRUE)
+
+sum(is.na(avg_data))
+
+temp= avg_data %>% filter(year >= 2015)
+
+sum(is.na(temp))
+
+avg_data$seven_day_index <- c(0, rep(1:(nrow(avg_data)-1)%/%7))
+
+avg2_data= 
+  avg_data %>%
+    group_by(across(all_of(c("year", "month", "seven_day_index")))) %>%
+        summarise_at(colnames(data_Aotizhongxin)[c(6:15, 17)], mean, na.rm = TRUE)
+
+sum(is.na(avg2_data))
+
+temp2= avg2_data %>% filter(year >= 2015)
+
+sum(is.na(temp2))
+
+```
+```{r}
+
+df_all= data_Aotizhongxin 
+
+for (i in regions){
+  
+  df_all(union(df_all, ))
+  
+}
+
+```
+
+
+# Data Transformation
+```{r mean}
+
+data_all_avg_hr= 
+  data_all %>%
+    group_by(across(all_of(c("year", "month", "day", "hour")))) %>%
+        summarise_at(colnames(data_all)[c(6:15, 17)], mean, na.rm = TRUE)
+
+dim(data_all_avg_hr)
+
+sum(is.na(data_all_avg_hr))
+```
+
+```{r mean2}
+
+data_all_avg_day= 
+  data_all %>%
+    group_by(across(all_of(c("year", "month", "day")))) %>%
+        summarise_at(colnames(data_all)[c(6:15, 17)], mean, na.rm = TRUE)
+
+dim(data_all_avg_day)
+
+sum(is.na(data_all_avg_day))
+
+```
+
+
+# Modeling
+```{r}
+
+
+
+```
+
